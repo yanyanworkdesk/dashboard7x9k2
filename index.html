@@ -875,18 +875,15 @@ function renderGrowthContent(mod){
       <div class="budget-card"><div class="blabel">🐷 今日存下</div><div class="bval" style="color:${saved>=0?'#16A34A':'#DC2626'}">¥${saved.toFixed(0)}</div><div class="bsub">${saved>=0?'👍 达标':'⚠️ 超支'}</div></div>
     </div>`;
   }else if(mod==='sport'){
-    html+=`<div class="huawei-box">
-      <div class="huawei-card"><div class="hw-logo">⌚ 华为运动</div><div class="hw-val">8,420</div><div class="hw-sub">今日步数 · 达标84%</div></div>
-      <div class="huawei-card"><div class="hw-logo">⌚ 华为运动</div><div class="hw-val">320 kcal</div><div class="hw-sub">今日消耗</div></div>
-    </div>`;
     const plan=STORE.sportPlan||{};
     const todayWD=new Date().getDay();
     html+=`<div class="week-plan">`;
     for(let w=0;w<7;w++){
       const isToday=todayWD===w;
-      html+=`<div class="week-plan-day${isToday?' today-wd':''}"><div class="wd">周${WEEKDAYS[w]}</div><div class="wp">${plan[w]||'休息'}</div></div>`;
+      html+=`<div class="week-plan-day${isToday?' today-wd':''}" onclick="editSportPlan(${w})"><div class="wd">周${WEEKDAYS[w]}</div><div class="wp" id="plan-day-${w}">${plan[w]||'休息'}</div></div>`;
     }
     html+=`</div>`;
+    html+=`<div style="font-size:10px;color:var(--sub);text-align:center;margin-bottom:10px">👆 点击任意一天可编辑周计划</div>`;
     const planned=plan[todayWD]||'休息';
     const actual=todayItems.filter(i=>i.done).map(i=>i.title).join('、')||'暂无';
     html+=`<div class="plan-vs-real">
@@ -1007,7 +1004,7 @@ function renderGrowthCards(mod,items){
       if(item.lang) extraMeta+=`<span class="lang-tag${item.lang==='英文'?' en':''}">${item.lang}</span>`;
     }
     if(mod==='sport'&&item.bilibiliUrl){
-      extraMeta+=`<a href="${item.bilibiliUrl}" target="_blank" style="font-size:10px;color:var(--c-read);text-decoration:none;font-weight:600">📺 视频教程</a>`;
+      extraMeta+=`<a href="${item.bilibiliUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#fff;background:linear-gradient(135deg,#FF6B9D,#7B61FF);padding:4px 10px;border-radius:12px;text-decoration:none;font-weight:700">📺 B站教程</a>`;
     }
 
     return `<div class="card${doneCls}">
@@ -1080,7 +1077,8 @@ function openAddModal(){
     fields=`<input placeholder="运动名称" id="addTitle">
     <div class="modal-row"><select id="addType"><option>跑步</option><option>瑜伽</option><option>力量</option><option>骑行</option><option>步行</option></select></div>
     <div class="modal-row"><input placeholder="时长 (分钟)" type="number" id="addDuration"><input placeholder="消耗 (kcal)" type="number" id="addKcal"></div>
-    <input placeholder="B站视频链接（可选）" id="addBilibili">
+    <input placeholder="B站视频链接，例如：https://b23.tv/xxxxx" id="addBilibili">
+    <div style="font-size:10px;color:var(--sub);margin:-4px 0 8px">打开B站App → 分享 → 复制链接 → 粘贴到这里</div>
     <input placeholder="标签（逗号分隔）" id="addTags">`;
   }else if(mod==='work'){
     fields=`<input placeholder="任务名称" id="addTitle">
@@ -1161,6 +1159,28 @@ function confirmAdd(mod){
 }
 
 function closeModal(){document.getElementById('modalOverlay').classList.remove('show')}
+
+function editSportPlan(dayIndex){
+  const wd=WEEKDAYS[dayIndex];
+  const current=STORE.sportPlan?.[dayIndex]||'';
+  document.getElementById('modalContent').innerHTML=`
+    <h3>编辑周${wd}运动计划</h3>
+    <input id="planInput" placeholder="例如：瑜伽 / 跑步 / 休息" value="${escapeHtml(current)}">
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn btn-confirm sport" onclick="saveSportPlan(${dayIndex})">保存</button>
+    </div>`;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function saveSportPlan(dayIndex){
+  const val=document.getElementById('planInput').value.trim();
+  if(!STORE.sportPlan) STORE.sportPlan={};
+  STORE.sportPlan[dayIndex]=val||'休息';
+  saveData();
+  closeModal();
+  document.getElementById('growthContent').innerHTML=renderGrowthContent('sport');
+}
 
 // ============================================================
 // 感悟 Tab
