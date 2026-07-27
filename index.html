@@ -975,6 +975,7 @@ function renderGrowthCards(mod,items){
         <span class="ledger-cat" style="background:${bg};color:${cl}">${item.category}</span>
         <div class="ledger-info"><div class="t">${item.note}</div><div class="s">${item.method||''}</div></div>
         <div class="ledger-amount">-¥${(item.amount||0).toFixed(1)}</div>
+        <span style="font-size:14px;cursor:pointer;padding:4px" onclick="event.stopPropagation();deleteItem('${mod}',${item.id})">🗑️</span>
       </div>`;
     }
 
@@ -1020,6 +1021,7 @@ function renderGrowthCards(mod,items){
           ${tags?`<div class="card-meta">${tags}</div>`:''}
         </div>
         ${badge?`<div class="card-right"><span class="card-badge ${badgeCls}">${badge}</span></div>`:''}
+        <span style="font-size:15px;cursor:pointer;padding:4px;flex-shrink:0" onclick="event.stopPropagation();deleteItem('${mod}',${item.id})">🗑️</span>
       </div>
     </div>`;
   }).join('');
@@ -1033,7 +1035,18 @@ function toggleGrowthDone(el){
   item.done=!item.done;
   saveData();
   document.getElementById('growthContent').innerHTML=renderGrowthContent(mod);
-  // 更新侧边栏数字
+  updateGrowthSidebar();
+}
+
+function deleteItem(mod,id){
+  if(!confirm('确定删除这条记录吗？')) return;
+  STORE[mod]=(STORE[mod]||[]).filter(i=>i.id!==id);
+  saveData();
+  document.getElementById('growthContent').innerHTML=renderGrowthContent(mod);
+  updateGrowthSidebar();
+}
+
+function updateGrowthSidebar(){
   const sidebar=document.querySelector('.growth-sidebar');
   if(sidebar) sidebar.innerHTML=MOD_ORDER.map(m=>{
     const c=MOD_COLORS[m];
